@@ -1,0 +1,166 @@
+{% extends 'tracker/base.html' %}
+
+{% block title %}Home - Personal Expense Tracker{% endblock %}
+
+{% block content %}
+
+<div class="row g-4 mb-4">
+
+    <div class="col-md-4">
+        <div class="card shadow-lg border-0 rounded-4 h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Total This Month</h6>
+                <h2 class="fw-bold text-success mt-2">₱{{ total }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Number of Categories</h6>
+                <h3 class="fw-bold mt-2">{{ category_data|length }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Logged in as</h6>
+                <h5 class="fw-bold mt-2">{{ request.user.username }}</h5>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body text-center">
+        <h5 class="mb-4">Spending by Category</h5>
+        <div style="max-width: 600px; margin: auto;">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 mt-4">
+    <div class="card-body">
+        <h5 class="mb-4">Recent Expenses</h5>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td>{{ expense.date }}</td>
+                        <td>{{ expense.category }}</td>
+                        <td class="fw-semibold text-danger">₱{{ expense.amount }}</td>
+                        <td>{{ expense.description }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'edit_expense' expense.id %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                Edit
+                            </a>
+                            <a href="{% url 'delete_expense' expense.id %}" 
+                               class="btn btn-sm btn-outline-danger">
+                                Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">
+                            No expenses this month.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+
+    <div>
+        {% if expenses.has_previous %}
+            <a href="?page={{ expenses.previous_page_number }}" 
+               class="btn btn-outline-secondary btn-sm">
+                &lt; Previous
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="text-muted">
+        Page {{ expenses.number }} of {{ expenses.paginator.num_pages }}
+    </div>
+
+    <div>
+        {% if expenses.has_next %}
+            <a href="?page={{ expenses.next_page_number }}" 
+               class="btn btn-outline-secondary btn-sm">
+                Next &gt;
+            </a>
+        {% endif %}
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    
+    const labels = [
+        {% for item in category_data %}
+            "{{ item.category }}",
+        {% endfor %}
+    ];
+
+    const data = [
+        {% for item in category_data %}
+            {{ item.total }},
+        {% endfor %}
+    ];
+
+    const ctx = document.getElementById('categoryChart');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Spending per Category',
+                data: data,
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+
+{% endblock %}
